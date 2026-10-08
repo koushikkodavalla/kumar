@@ -10,7 +10,7 @@ function eligibleFor(student, opportunity) {
   const e = opportunity.eligibility || {};
   const branchOK =
     !e.branches?.length ||
-    e.branches.map(String).map(x => x.toLowerCase()).includes(String(student.branch).toLowerCase());
+    e.branches.map(String).map(x => x.toLowerCase()).includes(String(student.branch || "").toLowerCase());
 
   return (
     Number(student.cgpa || 0) >= Number(e.minCGPA || 0) &&
@@ -21,20 +21,24 @@ function eligibleFor(student, opportunity) {
 }
 
 router.get("/", authenticate, async (req, res) => {
-  const opportunities = await Opportunity.find()
-    .populate("company", "name companyName website")
-    .sort({ createdAt: -1 });
+  try {
+    const opportunities = await Opportunity.find()
+      .populate("company", "name companyName website")
+      .sort({ createdAt: -1 });
 
-  if (req.user.role === "student") {
-    return res.json(
-      opportunities.map(o => ({
-        ...o.toObject(),
-        eligible: eligibleFor(req.user, o)
-      }))
-    );
+    if (req.user.role === "student") {
+      return res.json(
+        opportunities.map(o => ({
+          ...o.toObject(),
+          eligible: eligibleFor(req.user, o)
+        }))
+      );
+    }
+
+    res.json(opportunities);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch opportunities", error: error.message });
   }
-
-  res.json(opportunities);
 });
 
 router.post("/", authenticate, authorize("company"), async (req, res) => {
@@ -81,23 +85,31 @@ router.post("/", authenticate, authorize("company"), async (req, res) => {
 });
 
 router.get("/mine", authenticate, authorize("company"), async (req, res) => {
-  const opportunities = await Opportunity.find({ company: req.user.id })
-    .sort({ createdAt: -1 });
-  res.json(opportunities);
+  try {
+    const opportunities = await Opportunity.find({ company: req.user.id })
+      .sort({ createdAt: -1 });
+    res.json(opportunities);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch your opportunities", error: error.message });
+  }
 });
 
 router.delete("/:id", authenticate, authorize("company"), async (req, res) => {
-  const opportunity = await Opportunity.findOne({
-    _id: req.params.id,
-    company: req.user.id
-  });
+  try {
+    const opportunity = await Opportunity.findOne({
+      _id: req.params.id,
+      company: req.user.id
+    });
 
-  if (!opportunity) return res.status(404).json({ message: "Opportunity not found" });
+    if (!opportunity) return res.status(404).json({ message: "Opportunity not found" });
 
-  await Application.deleteMany({ opportunity: opportunity._id });
-  await opportunity.deleteOne();
+    await Application.deleteMany({ opportunity: opportunity._id });
+    await opportunity.deleteOne();
 
-  res.json({ message: "Opportunity deleted" });
+    res.json({ message: "Opportunity deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete opportunity", error: error.message });
+  }
 });
 
 module.exports = router;

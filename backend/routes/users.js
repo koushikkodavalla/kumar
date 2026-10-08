@@ -5,8 +5,15 @@ const { authenticate, authorize } = require("../middleware/auth");
 const router = express.Router();
 
 router.get("/me", authenticate, async (req, res) => {
-  const user = await User.findById(req.user.id).select("-password");
-  res.json(user);
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch user profile", error: error.message });
+  }
 });
 
 router.put("/me", authenticate, async (req, res) => {
@@ -40,17 +47,25 @@ router.put("/me", authenticate, async (req, res) => {
 });
 
 router.get("/students", authenticate, authorize("admin"), async (req, res) => {
-  const students = await User.find({ role: "student" })
-    .select("-password")
-    .sort({ createdAt: -1 });
-  res.json(students);
+  try {
+    const students = await User.find({ role: "student" })
+      .select("-password")
+      .sort({ createdAt: -1 });
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch students", error: error.message });
+  }
 });
 
 router.get("/companies", authenticate, authorize("admin"), async (req, res) => {
-  const companies = await User.find({ role: "company" })
-    .select("-password")
-    .sort({ createdAt: -1 });
-  res.json(companies);
+  try {
+    const companies = await User.find({ role: "company" })
+      .select("-password")
+      .sort({ createdAt: -1 });
+    res.json(companies);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch companies", error: error.message });
+  }
 });
 
 module.exports = router;

@@ -1,0 +1,27 @@
+{
+  "name": "placement-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack Placement Management System deploy-ready for Vercel",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "node backend/server.js",
+    "server": "node backend/server.js",
+    "client": "npm --prefix frontend run dev",
+    "dev": "node backend/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.4"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.2.30"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}

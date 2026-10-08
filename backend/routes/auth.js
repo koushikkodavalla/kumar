@@ -5,10 +5,14 @@ const User = require("../models/User");
 
 const router = express.Router();
 
+function getJwtSecret() {
+  return process.env.JWT_SECRET || "default_placement_jwt_secret_please_set_in_env";
+}
+
 function tokenFor(user) {
   return jwt.sign(
     { id: user._id.toString(), role: user.role, name: user.name, email: user.email },
-    process.env.JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: "7d" }
   );
 }
@@ -55,7 +59,8 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Name, email and password are required." });
     }
 
-    const exists = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.trim().toLowerCase();
+    const exists = await User.findOne({ email: cleanEmail });
     if (exists) {
       return res.status(409).json({ message: "An account with this email already exists." });
     }
@@ -64,8 +69,8 @@ router.post("/register", async (req, res) => {
 
     const user = await User.create({
       role,
-      name,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      email: cleanEmail,
       password: hashed,
       phone: phone || "",
       branch: role === "student" ? branch || "" : "",
@@ -91,8 +96,12 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
+    if (!email || !password || !role) {
+      return res.status(400).json({ message: "Email, password and role are required." });
+    }
+
     const user = await User.findOne({
-      email: email?.toLowerCase(),
+      email: email.trim().toLowerCase(),
       role
     }).select("+password");
 

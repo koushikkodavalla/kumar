@@ -1,4 +1,9 @@
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+const rawBase = (import.meta.env.VITE_API_URL || "/api").trim();
+const trimmedBase = rawBase.replace(/\/+$/, "");
+const API_BASE =
+  trimmedBase.startsWith("http") && !trimmedBase.endsWith("/api")
+    ? `${trimmedBase}/api`
+    : trimmedBase;
 
 async function request(path, options = {}) {
   const token = localStorage.getItem("placement_token");
@@ -12,7 +17,9 @@ async function request(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  const response = await fetch(`${API_BASE}${normalizedPath}`, {
     ...options,
     headers
   });

@@ -1,5 +1,9 @@
 const jwt = require("jsonwebtoken");
 
+function getJwtSecret() {
+  return process.env.JWT_SECRET || "default_placement_jwt_secret_please_set_in_env";
+}
+
 function authenticate(req, res, next) {
   const header = req.headers.authorization;
 
@@ -9,7 +13,7 @@ function authenticate(req, res, next) {
 
   try {
     const token = header.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     next();
   } catch {
