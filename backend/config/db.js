@@ -7,13 +7,16 @@ if (!cached) {
 }
 
 async function connectDB() {
-  const uri = process.env.MONGODB_URI;
+  const rawUri = process.env.MONGODB_URI;
 
-  if (!uri) {
+  if (!rawUri) {
     throw new Error(
-      "MONGODB_URI is missing in environment variables. Please configure MONGODB_URI in your Vercel Project Settings > Environment Variables."
+      "MONGODB_URI is missing in environment variables. Please configure MONGODB_URI in your Vercel Project Settings > Environment Variables or .env file."
     );
   }
+
+  // Auto-clean <password> angle brackets if user included them from Atlas copy-paste
+  let uri = rawUri.trim().replace(/<([^>]+)>/g, "$1");
 
   if (cached.conn) {
     return cached.conn;
